@@ -34,7 +34,7 @@
         <cxf.surefire.format>brief</cxf.surefire.format>
         <cxf.surefire.usefile>false</cxf.surefire.usefile>
         <cxf.surefire.parallel.mode />
-        <cxf.surefire.fork.vmargs>-ea</cxf.surefire.fork.vmargs>
+        <cxf.surefire.fork.vmargs>-ea -Djavax.xml.accessExternalSchema=all</cxf.surefire.fork.vmargs>
         <cxf.server.launcher.vmargs>-ea</cxf.server.launcher.vmargs>
         <cxf.surefire.enable.assertions>true</cxf.surefire.enable.assertions>
         <cxf.compile.flags>-Xlint:unchecked,deprecation,fallthrough,finally</cxf.compile.flags>
