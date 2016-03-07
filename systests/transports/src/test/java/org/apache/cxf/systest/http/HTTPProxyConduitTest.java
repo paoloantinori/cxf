@@ -19,64 +19,66 @@
 
 package org.apache.cxf.systest.http;
 
-import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.transport.http.HTTPConduit;
 import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 
-import org.jboss.netty.handler.codec.http.HttpRequest;
-
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.littleshoot.proxy.HttpFilters;
+import org.littleshoot.proxy.HttpFiltersAdapter;
+import org.littleshoot.proxy.HttpFiltersSourceAdapter;
+import org.littleshoot.proxy.HttpProxyServer;
+import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
 
-import org.littleshoot.proxy.DefaultHttpProxyServer;
-import org.littleshoot.proxy.HttpFilter;
-import org.littleshoot.proxy.HttpRequestFilter;
-
+import io.netty.handler.codec.http.HttpRequest;
 
 /**
  * 
  */
 public class HTTPProxyConduitTest extends HTTPConduitTest {
     static final int PROXY_PORT = Integer.parseInt(allocatePort(HTTPProxyConduitTest.class));
-    static DefaultHttpProxyServer proxy;
-    static CountingFilter requestFilter = new CountingFilter();
-    
-    static class CountingFilter implements HttpRequestFilter {
-        AtomicInteger count = new AtomicInteger();
-        public void filter(HttpRequest httpRequest) {
+    static HttpProxyServer proxy;
+
+    private static AtomicInteger count = new AtomicInteger();
+    static class CountingFilter extends HttpFiltersAdapter {
+
+        public CountingFilter(HttpRequest originalRequest) {
+            super(originalRequest);
+        }
+
+        @Override
+        public void proxyToServerRequestSent() {
             count.incrementAndGet();
         }
-        
-        public void reset() {
-            count.set(0);
-        }
-        public int getCount() {
-            return count.get();
-        }
     }
-    
+
     public HTTPProxyConduitTest() {
     }
 
-    
     @AfterClass
     public static void stopProxy() {
         proxy.stop();
         proxy = null;
     }
-    
+
     @BeforeClass
     public static void startProxy() {
-        proxy = new DefaultHttpProxyServer(PROXY_PORT, requestFilter, new HashMap<String, HttpFilter>());
-        proxy.start();
+        proxy = DefaultHttpProxyServer.bootstrap().withPort(PROXY_PORT)
+                .withFiltersSource(new HttpFiltersSourceAdapter() {
+                    @Override
+                    public HttpFilters filterRequest(HttpRequest originalRequest) {
+                        return new CountingFilter(originalRequest);
+                    }
+                }).start();
     }
+
     @Before
     public void resetCount() {
-        requestFilter.reset();
+        count.set(0);
     }
     
     public void configureProxy(Client client) {
@@ -91,10 +93,10 @@ public class HTTPProxyConduitTest extends HTTPConduitTest {
     }
     
     public void resetProxyCount() {
-        requestFilter.reset();
+        count.set(0);
     }
     public void assertProxyRequestCount(int i) {
-        assertEquals("Unexpected request count", i, requestFilter.getCount());
+        assertEquals("Unexpected request count", i, count.get());
     }
     
 }
