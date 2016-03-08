@@ -444,8 +444,8 @@
         hibernate-bean-validation-helper feature -->
         <bundle start-level="30" dependency="true">mvn:org.hibernate/hibernate-validator/${cxf.hibernate.validator.version}</bundle>
         <bundle start-level="30" dependency="true">mvn:javax.validation/validation-api/${cxf.validation.api.version}</bundle>
-        <!-- The servicemix bundle for hibernate demands joda-time -->
-        <bundle start-level="30" dependency="true">mvn:org.apache.servicemix.bundles/org.apache.servicemix.bundles.joda-time/${cxf.servicemix.jodatime.version}</bundle>
+        <!-- The servicemix bundle for hibernate demands joda-time. hibernate-validator has import range [1.6,2) -->
+        <bundle start-level="30" dependency="true">mvn:joda-time/joda-time/1.6.2</bundle>
         <!-- The servicemix bundle for hibernate demands jsoup -->
         <bundle start-level="30" dependency="true">mvn:org.apache.servicemix.bundles/org.apache.servicemix.bundles.jsoup/${cxf.servicemix.jsoup.version}</bundle>
         <!-- hibernate requires jboss-logging -->
