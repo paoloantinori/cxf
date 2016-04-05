@@ -76,6 +76,7 @@
                 <include>release_notes.txt</include>
             </includes>
         </fileSet>
+        <!--
         <fileSet>
             <directory>src/main/release/samples</directory>
             <outputDirectory>apache-cxf-${cxf.version}/samples</outputDirectory>
@@ -86,6 +87,7 @@
                 <exclude>**/target/**/*</exclude>
             </excludes>
         </fileSet>
+        -->
         <fileSet>
             <directory>javadoc/target/core-api</directory>
             <outputDirectory>apache-cxf-${cxf.version}/docs/api</outputDirectory>
