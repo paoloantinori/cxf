@@ -16,23 +16,28 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package sample.rs.service;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import org.springframework.stereotype.Service;
- 
-@Path("/sayHello")
-@Service
-public class HelloService {
- 
-    @GET
-    @Path("/{a}")
-    @Produces(MediaType.TEXT_PLAIN)
-    public String sayHello(@PathParam("a") String a) {
-        return "Hello " + a + ", Welcome to CXF RS Spring Boot World!!!";
+package demo.jaxrs.server;
+
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement(name = "Customer")
+public class Customer {
+    private long id;
+    private String name;
+
+    public long getId() {
+        return id;
     }
-    
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 }

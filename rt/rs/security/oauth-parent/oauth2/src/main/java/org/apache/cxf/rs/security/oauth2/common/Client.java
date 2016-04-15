@@ -24,9 +24,17 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.MapKeyColumn;
+import javax.persistence.OneToOne;
+
+
 /**
  * Represents a registered third-party Client application
  */
+@Entity
 public class Client implements Serializable {
     
     private static final long serialVersionUID = -5550840247125850922L;
@@ -85,6 +93,7 @@ public class Client implements Serializable {
      * Get the client registration id
      * @return the consumer key
      */
+    @Id
     public String getClientId() {
         return clientId;
     }
@@ -204,6 +213,7 @@ public class Client implements Serializable {
      * may return the authorization code to
      * @return the redirect uris
      */
+    @ElementCollection
     public List<String> getRedirectUris() {
         return redirectUris;
     }
@@ -222,6 +232,7 @@ public class Client implements Serializable {
      * can use to obtain the access tokens.
      * @return the list of grant types
      */
+    @ElementCollection
     public List<String> getAllowedGrantTypes() {
         return allowedGrantTypes;
     }
@@ -244,6 +255,7 @@ public class Client implements Serializable {
      * authentication
      * @return the user subject
      */
+    @OneToOne
     public UserSubject getSubject() {
         return subject;
     }
@@ -266,6 +278,7 @@ public class Client implements Serializable {
      * who has registered this client
      * @return the resource owner user subject
      */
+    @OneToOne
     public UserSubject getResourceOwnerSubject() {
         return resourceOwnerSubject;
     }
@@ -274,6 +287,8 @@ public class Client implements Serializable {
      * Get the list of additional client properties
      * @return the list of properties
      */
+    @ElementCollection
+    @MapKeyColumn(name = "name")
     public Map<String, String> getProperties() {
         return properties;
     }
@@ -290,6 +305,7 @@ public class Client implements Serializable {
      * Get the list of registered scopes
      * @return scopes
      */
+    @ElementCollection
     public List<String> getRegisteredScopes() {
         return registeredScopes;
     }
@@ -307,6 +323,7 @@ public class Client implements Serializable {
         this.registeredScopes = registeredScopes;
     }
 
+    @ElementCollection
     public List<String> getRegisteredAudiences() {
         return registeredAudiences;
     }
@@ -319,6 +336,7 @@ public class Client implements Serializable {
         this.registeredAudiences = registeredAudiences;
     }
 
+    @ElementCollection
     public List<String> getApplicationCertificates() {
         return applicationCertificates;
     }

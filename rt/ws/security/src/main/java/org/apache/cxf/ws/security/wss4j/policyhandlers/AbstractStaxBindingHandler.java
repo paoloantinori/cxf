@@ -171,7 +171,7 @@ public abstract class AbstractStaxBindingHandler extends AbstractCommonBindingHa
             }
         }
         
-        return new SecurePart(WSSConstants.TAG_wsse_UsernameToken, Modifier.Element);
+        return new SecurePart(WSSConstants.TAG_WSSE_USERNAME_TOKEN, Modifier.Element);
     }
     
     private static class UTCallbackHandler implements CallbackHandler {
@@ -265,7 +265,7 @@ public abstract class AbstractStaxBindingHandler extends AbstractCommonBindingHa
         }
         */
         
-        SecurePart securePart = new SecurePart(WSSConstants.TAG_wsse_BinarySecurityToken, Modifier.Element);
+        SecurePart securePart = new SecurePart(WSSConstants.TAG_WSSE_BINARY_SECURITY_TOKEN, Modifier.Element);
         securePart.setIdToSign(wss4jToken.getId());
         
         return securePart;
@@ -304,10 +304,10 @@ public abstract class AbstractStaxBindingHandler extends AbstractCommonBindingHa
         }
         properties.addAction(actionToPerform);
         
-        QName qname = WSSConstants.TAG_saml2_Assertion;
+        QName qname = WSSConstants.TAG_SAML2_ASSERTION;
         SamlTokenType tokenType = token.getSamlTokenType();
         if (tokenType == SamlTokenType.WssSamlV11Token10 || tokenType == SamlTokenType.WssSamlV11Token11) {
-            qname = WSSConstants.TAG_saml_Assertion;
+            qname = WSSConstants.TAG_SAML_ASSERTION;
         }
         
         return new SecurePart(qname, Modifier.Element);
@@ -362,9 +362,9 @@ public abstract class AbstractStaxBindingHandler extends AbstractCommonBindingHa
                 };
                 properties.setSamlCallbackHandler(callbackHandler);
                 
-                QName qname = WSSConstants.TAG_saml2_Assertion;
+                QName qname = WSSConstants.TAG_SAML2_ASSERTION;
                 if (WSConstants.SAML_NS.equals(el.getNamespaceURI())) {
-                    qname = WSSConstants.TAG_saml_Assertion;
+                    qname = WSSConstants.TAG_SAML_ASSERTION;
                 }
                 
                 return new SecurePart(qname, Modifier.Element);
@@ -381,13 +381,13 @@ public abstract class AbstractStaxBindingHandler extends AbstractCommonBindingHa
         SecurityTokenConstants.TokenType tokenType = WSSecurityTokenConstants.EncryptedKeyToken;
         if (tok.getTokenType() != null) {
             if (tok.getTokenType().startsWith(WSSConstants.NS_KERBEROS11_TOKEN_PROFILE)) {
-                tokenType = WSSecurityTokenConstants.KerberosToken;
+                tokenType = WSSecurityTokenConstants.KERBEROS_TOKEN;
             } else if (tok.getTokenType().startsWith(WSSConstants.NS_SAML10_TOKEN_PROFILE)
                 || tok.getTokenType().startsWith(WSSConstants.NS_SAML11_TOKEN_PROFILE)) {
-                tokenType = WSSecurityTokenConstants.Saml11Token;
+                tokenType = WSSecurityTokenConstants.SAML_11_TOKEN;
             } else if (tok.getTokenType().startsWith(WSSConstants.NS_WSC_05_02)
                 || tok.getTokenType().startsWith(WSSConstants.NS_WSC_05_12)) {
-                tokenType = WSSecurityTokenConstants.SecureConversationToken;
+                tokenType = WSSecurityTokenConstants.SECURE_CONVERSATION_TOKEN;
             }
         }
         
@@ -517,8 +517,8 @@ public abstract class AbstractStaxBindingHandler extends AbstractCommonBindingHa
         if (token instanceof X509Token 
             && isTokenRequired(token.getIncludeTokenType())
             && (WSSecurityTokenConstants.KeyIdentifier_IssuerSerial.equals(keyIdentifier)
-                || WSSecurityTokenConstants.KeyIdentifier_ThumbprintIdentifier.equals(keyIdentifier)
-                || WSSecurityTokenConstants.KeyIdentifier_SecurityTokenDirectReference.equals(
+                || WSSecurityTokenConstants.KEYIDENTIFIER_THUMBPRINT_IDENTIFIER.equals(keyIdentifier)
+                || WSSecurityTokenConstants.KEYIDENTIFIER_SECURITY_TOKEN_DIRECT_REFERENCE.equals(
                     keyIdentifier))) {
             properties.setIncludeSignatureToken(true);
         } else {
@@ -548,6 +548,11 @@ public abstract class AbstractStaxBindingHandler extends AbstractCommonBindingHa
         properties.setSignatureDigestAlgorithm(algType.getDigest());
         // sig.setSigCanonicalization(binding.getAlgorithmSuite().getC14n().getValue());
 
+        boolean includePrefixes = 
+            MessageUtils.getContextualBoolean(
+                message, SecurityConstants.ADD_INCLUSIVE_PREFIXES, true
+            );
+        properties.setAddExcC14NInclusivePrefixes(includePrefixes);
     }
     
     protected WSSecurityTokenConstants.KeyIdentifier getKeyIdentifierType(
@@ -561,7 +566,7 @@ public abstract class AbstractStaxBindingHandler extends AbstractCommonBindingHa
             } else if (x509Token.isRequireKeyIdentifierReference()) {
                 identifier = WSSecurityTokenConstants.KeyIdentifier_SkiKeyIdentifier;
             } else if (x509Token.isRequireThumbprintReference()) {
-                identifier = WSSecurityTokenConstants.KeyIdentifier_ThumbprintIdentifier;
+                identifier = WSSecurityTokenConstants.KEYIDENTIFIER_THUMBPRINT_IDENTIFIER;
             }
         } else if (token instanceof KeyValueToken) {
             identifier = WSSecurityTokenConstants.KeyIdentifier_KeyValue;
@@ -579,7 +584,7 @@ public abstract class AbstractStaxBindingHandler extends AbstractCommonBindingHa
                 identifier = WSSecurityTokenConstants.KeyIdentifier_IssuerSerial;
             } else if (wss instanceof Wss11
                 && ((Wss11) wss).isMustSupportRefThumbprint()) {
-                identifier = WSSecurityTokenConstants.KeyIdentifier_ThumbprintIdentifier;
+                identifier = WSSecurityTokenConstants.KEYIDENTIFIER_THUMBPRINT_IDENTIFIER;
             }
         } else if (token.getIncludeTokenType() == IncludeTokenType.INCLUDE_TOKEN_ALWAYS_TO_RECIPIENT
             && !isRequestor() && token instanceof X509Token) {
@@ -593,7 +598,7 @@ public abstract class AbstractStaxBindingHandler extends AbstractCommonBindingHa
             return identifier;
         }
         
-        return WSSecurityTokenConstants.KeyIdentifier_SecurityTokenDirectReference;
+        return WSSecurityTokenConstants.KEYIDENTIFIER_SECURITY_TOKEN_DIRECT_REFERENCE;
     }
     
     protected Map<AbstractToken, SecurePart> handleSupportingTokens(
@@ -671,7 +676,7 @@ public abstract class AbstractStaxBindingHandler extends AbstractCommonBindingHa
                 configureSignature(token, false);
                 if (suppTokens.isEncryptedToken()) {
                     SecurePart part = 
-                        new SecurePart(WSSConstants.TAG_wsse_BinarySecurityToken, Modifier.Element);
+                        new SecurePart(WSSConstants.TAG_WSSE_BINARY_SECURITY_TOKEN, Modifier.Element);
                     encryptedTokensList.add(part);
                 }
                 ret.put(token, new SecurePart(WSSConstants.TAG_dsig_Signature, Modifier.Element));
@@ -777,8 +782,8 @@ public abstract class AbstractStaxBindingHandler extends AbstractCommonBindingHa
                 List<WSSConstants.Action> actionList = properties.getActions();
     
                 // Don't add a signed SAML Token as a part, as it will be automatically signed by WSS4J
-                if (!((WSSConstants.TAG_saml_Assertion.equals(name) 
-                    || WSSConstants.TAG_saml2_Assertion.equals(name))
+                if (!((WSSConstants.TAG_SAML_ASSERTION.equals(name) 
+                    || WSSConstants.TAG_SAML2_ASSERTION.equals(name))
                     && actionList != null && actionList.contains(WSSConstants.SAML_TOKEN_SIGNED))) {
                     properties.addSignaturePart(part);
                 }
@@ -805,7 +810,7 @@ public abstract class AbstractStaxBindingHandler extends AbstractCommonBindingHa
         
         if (sigParts != null) {
             SecurePart securePart = 
-                new SecurePart(WSSConstants.TAG_wsse11_SignatureConfirmation, Modifier.Element);
+                new SecurePart(WSSConstants.TAG_WSSE11_SIG_CONF, Modifier.Element);
             sigParts.add(securePart);
         }
         signatureConfirmationAdded = true;

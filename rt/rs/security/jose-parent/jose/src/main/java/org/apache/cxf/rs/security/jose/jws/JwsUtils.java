@@ -240,6 +240,11 @@ public final class JwsUtils {
                                                       JoseConstants.RSSEC_SIGNATURE_PROPS);
         
     }
+    public static Properties loadSignatureProperties(String propertiesName, boolean required) {
+        Message m = PhaseInterceptorChain.getCurrentMessage();
+        return KeyManagementUtils.loadStoreProperties(m, required, propertiesName, null);
+        
+    }
     public static JwsSignatureVerifier loadSignatureVerifier(boolean required) {
         return loadSignatureVerifier(null, required);
     }
@@ -301,7 +306,7 @@ public final class JwsUtils {
         return loadSignatureProvider(PhaseInterceptorChain.getCurrentMessage(),
                                      props, headers, false);
     }
-    public static JwsSignatureProvider loadSignatureProvider(Message m, 
+    private static JwsSignatureProvider loadSignatureProvider(Message m, 
                                                              Properties props,
                                                              JwsHeaders headers,
                                                              boolean ignoreNullProvider) {
@@ -371,7 +376,7 @@ public final class JwsUtils {
         return loadSignatureVerifier(PhaseInterceptorChain.getCurrentMessage(),
                                      props, inHeaders, false);
     }
-    public static JwsSignatureVerifier loadSignatureVerifier(Message m, 
+    private static JwsSignatureVerifier loadSignatureVerifier(Message m, 
                                                               Properties props,
                                                               JwsHeaders inHeaders, 
                                                               boolean ignoreNullVerifier) {

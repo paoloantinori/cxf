@@ -39,7 +39,7 @@ import org.apache.cxf.rt.security.crypto.KeyProperties;
 public class DefaultEncryptingOAuthDataProvider extends AbstractOAuthDataProvider {
     protected SecretKey key;
     private Set<String> tokens = Collections.synchronizedSet(new HashSet<String>());
-    private ConcurrentHashMap<String, String> refreshTokens = new ConcurrentHashMap<String, String>();
+    private Set<String> refreshTokens = Collections.synchronizedSet(new HashSet<String>());
     private ConcurrentHashMap<String, String> clientsMap = new ConcurrentHashMap<String, String>();
     public DefaultEncryptingOAuthDataProvider(String algo, int keySize) {
         this(new KeyProperties(algo, keySize));
@@ -62,20 +62,15 @@ public class DefaultEncryptingOAuthDataProvider extends AbstractOAuthDataProvide
         
     }
     @Override
-    public Client removeClient(String clientId) {
-        Client client = getClient(clientId);
-        clientsMap.remove(clientId);
-        removeClientTokens(client);
-        return client;
+    public void doRemoveClient(Client c) {
+        clientsMap.remove(c.getClientId());
     }
     @Override
     public List<Client> getClients(UserSubject resourceOwner) {
         List<Client> clients = new ArrayList<Client>(clientsMap.size());
         for (String clientKey : clientsMap.keySet()) {
             Client c = getClient(clientKey);
-            if (resourceOwner == null 
-                || c.getResourceOwnerSubject() != null 
-                   && c.getResourceOwnerSubject().getLogin().equals(resourceOwner.getLogin())) {
+            if (isClientMatched(c, resourceOwner)) {
                 clients.add(c);
             }
         }
@@ -95,23 +90,13 @@ public class DefaultEncryptingOAuthDataProvider extends AbstractOAuthDataProvide
     @Override
     public List<RefreshToken> getRefreshTokens(Client c, UserSubject sub) {
         List<RefreshToken> list = new ArrayList<RefreshToken>(refreshTokens.size());
-        for (String tokenKey : tokens) {
+        for (String tokenKey : refreshTokens) {
             RefreshToken token = getRefreshToken(tokenKey);
             if (isTokenMatched(token, c, sub)) {
                 list.add(token);
             }
         }
         return list;
-    }
-    
-    protected static boolean isTokenMatched(ServerAccessToken token, Client c, UserSubject sub) {
-        if (c == null || token.getClient().getClientId().equals(c.getClientId())) {
-            UserSubject tokenSub = token.getSubject();
-            if (sub == null || tokenSub != null && tokenSub.getLogin().equals(sub.getLogin())) {
-                return true;
-            }
-        }
-        return false;
     }
     @Override
     public ServerAccessToken getAccessToken(String accessToken) throws OAuthServiceException {
@@ -128,33 +113,25 @@ public class DefaultEncryptingOAuthDataProvider extends AbstractOAuthDataProvide
     }
 
     @Override
-    protected ServerAccessToken revokeAccessToken(String accessTokenKey) {
-        ServerAccessToken at = getAccessToken(accessTokenKey);
-        tokens.remove(accessTokenKey);
-        return at;
+    protected void doRevokeAccessToken(ServerAccessToken at) {
+        tokens.remove(at.getTokenKey());
     }
     
     @Override
-    protected void saveRefreshToken(ServerAccessToken at, RefreshToken refreshToken) {
+    protected void saveRefreshToken(RefreshToken refreshToken) {
         String encryptedRefreshToken = ModelEncryptionSupport.encryptRefreshToken(refreshToken, key);
-        at.setRefreshToken(encryptedRefreshToken);
+        refreshToken.setTokenKey(encryptedRefreshToken);
+        refreshTokens.add(encryptedRefreshToken);
     }
 
     @Override
-    protected RefreshToken revokeRefreshToken(String refreshTokenKey) {
-        RefreshToken rt = null;
-        if (refreshTokens.containsKey(refreshTokenKey)) {
-            rt = getRefreshToken(refreshTokenKey);
-            refreshTokens.remove(refreshTokenKey);
-        }
-        return rt;
-        
+    protected void doRevokeRefreshToken(RefreshToken rt) {
+        refreshTokens.remove(rt.getTokenKey());
     }
 
     private void encryptAccessToken(ServerAccessToken token) {
         String encryptedToken = ModelEncryptionSupport.encryptAccessToken(token, key);
         tokens.add(encryptedToken);
-        refreshTokens.put(token.getRefreshToken(), encryptedToken);
         token.setTokenKey(encryptedToken);
     }
     @Override

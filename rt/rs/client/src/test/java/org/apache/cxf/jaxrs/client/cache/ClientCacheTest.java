@@ -159,6 +159,7 @@ public class ClientCacheTest extends Assert {
         }    
     }
     
+    
     private static Invocation.Builder setAsLocal(final Invocation.Builder client) {
         WebClient.getConfig(client).getRequestContext().put(LocalConduit.DIRECT_DISPATCH, Boolean.TRUE);
         return client;
