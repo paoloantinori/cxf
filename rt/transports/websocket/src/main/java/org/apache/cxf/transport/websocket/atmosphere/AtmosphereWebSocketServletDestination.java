@@ -37,9 +37,9 @@ import org.apache.cxf.transport.servlet.ServletDestination;
 import org.apache.cxf.transport.websocket.WebSocketDestinationService;
 import org.atmosphere.cpr.ApplicationConfig;
 import org.atmosphere.cpr.AtmosphereFramework;
-import org.atmosphere.cpr.AtmosphereRequest;
+import org.atmosphere.cpr.AtmosphereRequestImpl;
 import org.atmosphere.cpr.AtmosphereResource;
-import org.atmosphere.cpr.AtmosphereResponse;
+import org.atmosphere.cpr.AtmosphereResponseImpl;
 import org.atmosphere.handler.AbstractReflectorAtmosphereHandler;
 
 /**
@@ -70,8 +70,8 @@ public class AtmosphereWebSocketServletDestination extends ServletDestination im
                        HttpServletResponse resp) throws IOException {
         if (AtmosphereUtils.useAtmosphere(req)) {
             try {
-                framework.doCometSupport(AtmosphereRequest.wrap(req), 
-                                         AtmosphereResponse.wrap(resp));
+                framework.doCometSupport(AtmosphereRequestImpl.wrap(req),
+                                         AtmosphereResponseImpl.wrap(resp));
             } catch (ServletException e) {
                 throw new IOException(e);
             }
