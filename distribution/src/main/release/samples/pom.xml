@@ -30,6 +30,11 @@
         <!-- don't deploy the samples, kind of pointless -->
         <maven.deploy.skip>true</maven.deploy.skip>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <cxf.spring3.version>3.2.16.RELEASE</cxf.spring3.version>
+        <cxf.spring3.osgi.version>3.2.16.RELEASE_1</cxf.spring3.osgi.version>
+        <cxf.spring4.version>4.2.5.RELEASE</cxf.spring4.version>
+        <cxf.spring4.osgi.version>4.2.5.RELEASE_1</cxf.spring4.osgi.version>
+        <cxf.spring.version>${cxf.spring3.version}</cxf.spring.version>
     </properties>
     <dependencies>
         <dependency>

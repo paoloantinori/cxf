@@ -259,7 +259,6 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>${cxf.spring.mock}</artifactId>
-            <version>${cxf.spring.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
