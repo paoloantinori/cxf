@@ -169,7 +169,8 @@
                             org.apache.cxf.wsn.services;version=${project.version}
                         </Export-Package>
                         <_nouses>true</_nouses>
-                        <_versionpolicy>[$(version;==;$(@)),$(version;+;$(@)))</_versionpolicy>
+                        <_provider-policy><![CDATA[$<range;[==,=+)>]]></_provider-policy>
+                        <_consumer-policy><![CDATA[$<range;[==,+)>]]></_consumer-policy>
                     </instructions>
                 </configuration>
             </plugin>

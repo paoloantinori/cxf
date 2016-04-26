@@ -96,7 +96,8 @@
                         <Fragment-Host>${cxf.fragment.host}</Fragment-Host>
                         <_failok>true</_failok>
                         <_nouses>true</_nouses>
-                        <_versionpolicy>[$(version;==;$(@)),$(version;+;$(@)))</_versionpolicy>
+                        <_provider-policy><![CDATA[$<range;[==,=+)>]]></_provider-policy>
+                        <_consumer-policy><![CDATA[$<range;[==,+)>]]></_consumer-policy>
                         <Export-Package>${cxf.osgi.export}</Export-Package>
                         <Import-Package>
                             ${cxf.osgi.import}
