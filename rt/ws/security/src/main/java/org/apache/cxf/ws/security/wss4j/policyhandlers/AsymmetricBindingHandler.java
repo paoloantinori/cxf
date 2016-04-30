@@ -495,7 +495,6 @@ public class AsymmetricBindingHandler extends AbstractBindingBuilder {
                     encr.setSymmetricEncAlgorithm(algType.getEncryption());
                     encr.setKeyEncAlgo(algType.getAsymmetricKeyWrap());
                     encr.setMGFAlgorithm(algType.getMGFAlgo());
-                    encr.setDigestAlgorithm(algType.getEncryptionDigest());
                     encr.prepare(saaj.getSOAPPart(), crypto);
                     
                     Element encryptedKeyElement = encr.getEncryptedKeyElement();
