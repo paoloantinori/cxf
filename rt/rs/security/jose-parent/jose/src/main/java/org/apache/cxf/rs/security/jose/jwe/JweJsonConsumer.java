@@ -81,11 +81,20 @@ public class JweJsonConsumer {
         return input;
     }
 
-    private JweJsonEncryptionEntry getJweDecryptionEntry(JweDecryptionProvider jwe) {
+    public JweJsonEncryptionEntry getJweDecryptionEntry(JweDecryptionProvider jwe) {
+        return getJweDecryptionEntry(jwe, null);
+    }
+    
+    public JweJsonEncryptionEntry getJweDecryptionEntry(JweDecryptionProvider jwe,
+                                                        Map<String, Object> recipientProps) {
         for (Map.Entry<JweJsonEncryptionEntry, JweHeaders> entry : recipientsMap.entrySet()) {
             KeyAlgorithm keyAlgo = entry.getValue().getKeyEncryptionAlgorithm();
             if (keyAlgo != null && keyAlgo.equals(jwe.getKeyAlgorithm())
                 || keyAlgo == null && jwe.getKeyAlgorithm() == null) {
+                if (recipientProps != null 
+                    && !entry.getValue().asMap().entrySet().containsAll(recipientProps.entrySet())) {
+                    continue;
+                }
                 return entry.getKey();        
             }    
         }

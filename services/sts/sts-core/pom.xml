@@ -150,7 +150,8 @@
                 <configuration>
                     <instructions>
                         <_nouses>true</_nouses>
-                        <_versionpolicy>[$(version;==;$(@)),$(version;+;$(@)))</_versionpolicy>
+                        <_provider-policy><![CDATA[$<range;[==,=+)>]]></_provider-policy>
+                        <_consumer-policy><![CDATA[$<range;[==,+)>]]></_consumer-policy>
                         <Implementation-Title>${project.name}</Implementation-Title>
                         <Implementation-Vendor>The Apache Software Foundation</Implementation-Vendor>
                         <Implementation-Vendor-Id>org.apache</Implementation-Vendor-Id>

@@ -90,9 +90,9 @@ public class DataSourceProviderTest extends AbstractBusClientServerTestBase {
 
         conn.setRequestMethod("POST");
         conn.addRequestProperty("Content-Type", contentType);
-        OutputStream out = conn.getOutputStream();
-        IOUtils.copy(in, out);
-        out.close();
+        try (OutputStream out = conn.getOutputStream()) {
+            IOUtils.copy(in, out);
+        }
         MimeMultipart mm = readAttachmentParts(conn.getContentType(),
                                                conn.getInputStream());
 
@@ -101,16 +101,16 @@ public class DataSourceProviderTest extends AbstractBusClientServerTestBase {
     }
 
     private void printSource(Source source) {
-        try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
             StreamResult sr = new StreamResult(bos);
-            Transformer trans = TransformerFactory.newInstance().newTransformer();
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            transformerFactory.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            Transformer transformer = transformerFactory.newTransformer();
             Properties oprops = new Properties();
             oprops.put(OutputKeys.OMIT_XML_DECLARATION, "yes");
-            trans.setOutputProperties(oprops);
-            trans.transform(source, sr);
+            transformer.setOutputProperties(oprops);
+            transformer.transform(source, sr);
             assertEquals(bos.toString(), "<doc><response>Hello</response></doc>");
-            bos.close();
         } catch (Exception e) {
             e.printStackTrace();
         }

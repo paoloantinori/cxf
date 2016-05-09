@@ -191,7 +191,7 @@ public class StaxAsymmetricBindingHandler extends AbstractStaxBindingHandler {
                 enc.add(part);
                 if (signatureConfirmationAdded) {
                     SecurePart securePart = 
-                        new SecurePart(WSSConstants.TAG_wsse11_SignatureConfirmation, Modifier.Element);
+                        new SecurePart(WSSConstants.TAG_WSSE11_SIG_CONF, Modifier.Element);
                     enc.add(securePart);
                 }
                 assertPolicy(
@@ -303,7 +303,7 @@ public class StaxAsymmetricBindingHandler extends AbstractStaxBindingHandler {
                     encrParts.add(part);
                     if (signatureConfirmationAdded) {
                         SecurePart securePart = 
-                            new SecurePart(WSSConstants.TAG_wsse11_SignatureConfirmation, Modifier.Element);
+                            new SecurePart(WSSConstants.TAG_WSSE11_SIG_CONF, Modifier.Element);
                         encrParts.add(securePart);
                     }
                     assertPolicy(
@@ -370,8 +370,8 @@ public class StaxAsymmetricBindingHandler extends AbstractStaxBindingHandler {
             if (encrToken instanceof X509Token 
                 && isTokenRequired(encrToken.getIncludeTokenType())
                 && (WSSecurityTokenConstants.KeyIdentifier_IssuerSerial.equals(keyIdentifier)
-                    || WSSecurityTokenConstants.KeyIdentifier_ThumbprintIdentifier.equals(keyIdentifier)
-                    || WSSecurityTokenConstants.KeyIdentifier_SecurityTokenDirectReference.equals(
+                    || WSSecurityTokenConstants.KEYIDENTIFIER_THUMBPRINT_IDENTIFIER.equals(keyIdentifier)
+                    || WSSecurityTokenConstants.KEYIDENTIFIER_SECURITY_TOKEN_DIRECT_REFERENCE.equals(
                         keyIdentifier))) {
                 properties.setIncludeEncryptionToken(true);
             } else {

@@ -35,6 +35,7 @@ import org.apache.cxf.helpers.IOUtils;
 
 
 public class JsonMapObjectReaderWriter {
+    private static final String NULL_VALUE = "null";
     private boolean format;
     
     public JsonMapObjectReaderWriter() {
@@ -95,7 +96,9 @@ public class JsonMapObjectReaderWriter {
     
     @SuppressWarnings("unchecked")
     protected void toJsonInternal(Output out, Object value, boolean hasNext) {
-        if (JsonMapObject.class.isAssignableFrom(value.getClass())) {
+        if (value == null) {
+            out.append(null);
+        } else if (JsonMapObject.class.isAssignableFrom(value.getClass())) {
             out.append(toJson((JsonMapObject)value));
         } else if (value.getClass().isArray()) {
             toJsonInternal(out, (Object[])value);
@@ -219,6 +222,8 @@ public class JsonMapObjectReaderWriter {
             value = valueStr.substring(1, valueStr.length() - 1);
         } else if ("true".equals(valueStr) || "false".equals(valueStr)) {
             value = Boolean.valueOf(valueStr);
+        } else if (NULL_VALUE.equals(valueStr)) {
+            return null;
         } else {
             try {
                 value = Long.valueOf(valueStr);

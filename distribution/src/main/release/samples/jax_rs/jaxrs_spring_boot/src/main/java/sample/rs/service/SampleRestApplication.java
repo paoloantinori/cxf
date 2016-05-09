@@ -17,6 +17,8 @@
  * under the License.
  */
 package sample.rs.service;
+import java.util.Arrays;
+
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.spring.JaxRsConfig;
@@ -27,6 +29,9 @@ import org.springframework.boot.context.embedded.ServletRegistrationBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+
+import sample.rs.service.hello1.HelloService;
+import sample.rs.service.hello2.HelloService2;
 
 @SpringBootApplication
 @Import(JaxRsConfig.class)
@@ -44,7 +49,7 @@ public class SampleRestApplication {
     @Bean
     public Server rsServer() {
         JAXRSServerFactoryBean endpoint = new JAXRSServerFactoryBean();
-        endpoint.setServiceBean(new HelloService());
+        endpoint.setServiceBeans(Arrays.asList(new HelloService(), new HelloService2()));
         endpoint.setAddress("/helloservice");
         return endpoint.create();
     }

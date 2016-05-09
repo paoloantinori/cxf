@@ -19,8 +19,10 @@
 package org.apache.cxf.rs.security.jose.jws;
 
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
 
+import org.apache.cxf.rs.security.jose.common.JoseConstants;
 import org.apache.cxf.rs.security.jose.jwa.SignatureAlgorithm;
 import org.apache.cxf.rs.security.jose.jwk.JsonWebKey;
 import org.apache.cxf.rs.security.jose.jwk.JsonWebKeys;
@@ -60,6 +62,10 @@ public class JwsJsonConsumerTest extends Assert {
         assertEquals(JwsJsonProducerTest.UNSIGNED_PLAIN_DOCUMENT, consumer.getDecodedJwsPayload());
         assertTrue(consumer.verifySignatureWith(
             new HmacJwsSignatureVerifier(JwsJsonProducerTest.ENCODED_MAC_KEY_1, SignatureAlgorithm.HS256)));
+        JwsHeaders headers = consumer.getSignatureEntries().get(0).getProtectedHeader();
+        List<String> critical = headers.getCritical();
+        assertEquals(1, critical.size());
+        assertEquals(JoseConstants.JWS_HEADER_B64_STATUS_HEADER, critical.get(0));
     }
     
     @Test
@@ -81,6 +87,26 @@ public class JwsJsonConsumerTest extends Assert {
         JsonWebKey ecKey = jwks.getKey(secondKid);
         assertNotNull(ecKey);
         assertTrue(sigEntries.get(1).verifySignatureWith(ecKey));
+    }
+    @Test
+    public void testVerifySingleEntryInDualSignedDocument() throws Exception {
+        JwsJsonConsumer consumer = new JwsJsonConsumer(DUAL_SIGNED_DOCUMENT); 
+        JsonWebKeys jwks = readKeySet("jwkPublicJsonConsumerSet.txt");
+        
+        List<JwsJsonSignatureEntry> sigEntries = consumer.getSignatureEntries();
+        assertEquals(2, sigEntries.size());
+        // 1st signature
+        String firstKid = (String)sigEntries.get(0).getKeyId();
+        assertEquals(KID_OF_THE_FIRST_SIGNER, firstKid);
+        JsonWebKey rsaKey = jwks.getKey(firstKid);
+        assertNotNull(rsaKey);
+        JwsSignatureVerifier jws = JwsUtils.getSignatureVerifier(rsaKey);
+        assertTrue(consumer.verifySignatureWith(jws));
+        List<JwsJsonSignatureEntry> remainingEntries =
+            consumer.verifyAndGetNonValidated(Collections.singletonList(jws));
+        assertEquals(1, remainingEntries.size());
+        assertEquals(KID_OF_THE_SECOND_SIGNER, remainingEntries.get(0).getKeyId());
+        
     }
     public JsonWebKeys readKeySet(String fileName) throws Exception {
         InputStream is = JwsJsonConsumerTest.class.getResourceAsStream(fileName);

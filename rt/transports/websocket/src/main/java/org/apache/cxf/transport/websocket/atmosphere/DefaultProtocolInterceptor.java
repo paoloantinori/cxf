@@ -22,7 +22,6 @@ package org.apache.cxf.transport.websocket.atmosphere;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -38,8 +37,8 @@ import org.apache.cxf.io.CachedOutputStream;
 import org.apache.cxf.transport.websocket.InvalidPathException;
 import org.apache.cxf.transport.websocket.WebSocketConstants;
 import org.apache.cxf.transport.websocket.WebSocketUtils;
-import org.atmosphere.config.service.AtmosphereInterceptorService;
 import org.atmosphere.cpr.Action;
+import org.atmosphere.cpr.ApplicationConfig;
 import org.atmosphere.cpr.AsyncIOInterceptor;
 import org.atmosphere.cpr.AsyncIOInterceptorAdapter;
 import org.atmosphere.cpr.AsyncIOWriter;
@@ -48,20 +47,26 @@ import org.atmosphere.cpr.AtmosphereFramework;
 import org.atmosphere.cpr.AtmosphereInterceptorAdapter;
 import org.atmosphere.cpr.AtmosphereInterceptorWriter;
 import org.atmosphere.cpr.AtmosphereRequest;
+import org.atmosphere.cpr.AtmosphereRequestImpl;
 import org.atmosphere.cpr.AtmosphereResource;
+import org.atmosphere.cpr.AtmosphereResourceEvent;
+import org.atmosphere.cpr.AtmosphereResourceEventListenerAdapter;
 import org.atmosphere.cpr.AtmosphereResponse;
+import org.atmosphere.cpr.AtmosphereResponseImpl;
 import org.atmosphere.cpr.FrameworkConfig;
 
 /**
  * DefaultProtocolInterceptor provides the default CXF's WebSocket protocol that uses.
  * 
+ * This interceptor is automatically engaged when no atmosphere interceptor is configured.  
  */
-@AtmosphereInterceptorService
 public class DefaultProtocolInterceptor extends AtmosphereInterceptorAdapter {
     private static final Logger LOG = LogUtils.getL7dLogger(DefaultProtocolInterceptor.class);
 
     private static final String REQUEST_DISPATCHED = "request.dispatched";
     private static final String RESPONSE_PARENT = "response.parent";
+
+    private Map<String, AtmosphereResponse> suspendedResponses = new HashMap<String, AtmosphereResponse>();
 
     private final AsyncIOInterceptor interceptor = new Interceptor();
 
@@ -103,10 +108,77 @@ public class DefaultProtocolInterceptor extends AtmosphereInterceptorAdapter {
         this.excludedheaders = excludedheaders;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public Action inspect(final AtmosphereResource r) {
         LOG.log(Level.FINE, "inspect");
+        if (AtmosphereResource.TRANSPORT.WEBSOCKET != r.transport() 
+            && AtmosphereResource.TRANSPORT.SSE != r.transport()
+            && AtmosphereResource.TRANSPORT.POLLING != r.transport()) {
+            LOG.fine("Skipping ignorable request");
+            return Action.CONTINUE;
+        }
+        if (AtmosphereResource.TRANSPORT.POLLING == r.transport()) {
+            final String saruuid = (String)r.getRequest()
+                .getAttribute(ApplicationConfig.SUSPENDED_ATMOSPHERE_RESOURCE_UUID);
+            final AtmosphereResponse suspendedResponse = suspendedResponses.get(saruuid);
+            LOG.fine("Attaching a proxy writer to suspended response");
+            r.getResponse().asyncIOWriter(new AtmosphereInterceptorWriter() {
+                @Override
+                public AsyncIOWriter write(AtmosphereResponse r, String data) throws IOException {
+                    suspendedResponse.write(data);
+                    suspendedResponse.flushBuffer();
+                    return this;
+                }
+
+                @Override
+                public AsyncIOWriter write(AtmosphereResponse r, byte[] data) throws IOException {
+                    suspendedResponse.write(data);
+                    suspendedResponse.flushBuffer();
+                    return this;
+                }
+
+                @Override
+                public AsyncIOWriter write(AtmosphereResponse r, byte[] data, int offset, int length) 
+                    throws IOException {
+                    suspendedResponse.write(data, offset, length);
+                    suspendedResponse.flushBuffer();
+                    return this;
+                }
+
+                @Override
+                public void close(AtmosphereResponse response) throws IOException {
+                }
+            });
+            // REVISIT we need to keep this response's asyncwriter alive so that data can be written to the 
+            //   suspended response, but investigate if there is a better alternative. 
+            r.getResponse().destroyable(false);
+            return Action.CONTINUE;
+        }
+
+        r.addEventListener(new AtmosphereResourceEventListenerAdapter() {
+            @Override
+            public void onSuspend(AtmosphereResourceEvent event) {
+                final String srid = (String)event.getResource().getRequest()
+                    .getAttribute(ApplicationConfig.SUSPENDED_ATMOSPHERE_RESOURCE_UUID);
+                LOG.log(Level.FINE, "Registrering suspended resource: {}", srid);
+                suspendedResponses.put(srid, event.getResource().getResponse());
+
+                AsyncIOWriter writer = event.getResource().getResponse().getAsyncIOWriter();
+                if (writer instanceof AtmosphereInterceptorWriter) {
+                    ((AtmosphereInterceptorWriter)writer).interceptor(interceptor);
+                }
+            }
+
+            @Override
+            public void onDisconnect(AtmosphereResourceEvent event) {
+                super.onDisconnect(event);
+                final String srid = (String)event.getResource().getRequest()
+                    .getAttribute(ApplicationConfig.SUSPENDED_ATMOSPHERE_RESOURCE_UUID);
+                LOG.log(Level.FINE, "Unregistrering suspended resource: {}", srid);
+                suspendedResponses.remove(srid);
+            }
+
+        });
         AtmosphereRequest request = r.getRequest();
 
         if (request.getAttribute(REQUEST_DISPATCHED) == null) {
@@ -116,6 +188,11 @@ public class DefaultProtocolInterceptor extends AtmosphereInterceptorAdapter {
             try {
                 byte[] data = WebSocketUtils.readBody(request.getInputStream());
                 if (data.length == 0) {
+                    if (AtmosphereResource.TRANSPORT.WEBSOCKET == r.transport() 
+                        || AtmosphereResource.TRANSPORT.SSE == r.transport()) {
+                        r.suspend();
+                        return Action.SUSPEND;
+                    }
                     return Action.CANCELLED;
                 }
                 
@@ -125,10 +202,10 @@ public class DefaultProtocolInterceptor extends AtmosphereInterceptorAdapter {
                 try {
                     AtmosphereRequest ar = createAtmosphereRequest(request, data);
                     response = new WrappedAtmosphereResponse(r.getResponse(), ar);
-                    ar.attributes().put(REQUEST_DISPATCHED, "true");
+                    ar.localAttributes().put(REQUEST_DISPATCHED, "true");
                     String refid = ar.getHeader(WebSocketConstants.DEFAULT_REQUEST_ID_KEY);
                     if (refid != null) {
-                        ar.attributes().put(WebSocketConstants.DEFAULT_REQUEST_ID_KEY, refid);
+                        ar.localAttributes().put(WebSocketConstants.DEFAULT_REQUEST_ID_KEY, refid);
                     }
                     // This is a new request, we must clean the Websocket AtmosphereResource.
                     request.removeAttribute(FrameworkConfig.INJECTED_ATMOSPHERE_RESOURCE);
@@ -157,7 +234,6 @@ public class DefaultProtocolInterceptor extends AtmosphereInterceptorAdapter {
                 return Action.CANCELLED;
             } catch (IOException e) {
                 LOG.log(Level.WARNING, "Error during protocol processing", e);
-                return Action.CONTINUE;
             }           
         } else {
             request.destroyable(false);
@@ -170,12 +246,7 @@ public class DefaultProtocolInterceptor extends AtmosphereInterceptorAdapter {
         AsyncIOWriter writer = res.getAsyncIOWriter();
 
         if (writer instanceof AtmosphereInterceptorWriter) {
-            //REVIST need a better way to add a custom filter at the first entry and not at the last as
-            // e.g. interceptor(AsyncIOInterceptor interceptor, int position)
-            Deque<AsyncIOInterceptor> filters = AtmosphereInterceptorWriter.class.cast(writer).filters();
-            if (!filters.contains(interceptor)) {
-                filters.addFirst(interceptor);
-            }
+            AtmosphereInterceptorWriter.class.cast(writer).interceptor(interceptor, 0);
         }
     }
 
@@ -188,7 +259,7 @@ public class DefaultProtocolInterceptor extends AtmosphereInterceptorAdapter {
      * @throws IOException
      */
     protected AtmosphereRequest createAtmosphereRequest(AtmosphereRequest r, byte[] data) throws IOException {
-        AtmosphereRequest.Builder b = new AtmosphereRequest.Builder();
+        AtmosphereRequest.Builder b = new AtmosphereRequestImpl.Builder();
         ByteArrayInputStream in = new ByteArrayInputStream(data);
         Map<String, String> hdrs = WebSocketUtils.readHeaders(in);
         String path = hdrs.get(WebSocketUtils.URI_KEY);
@@ -230,6 +301,9 @@ public class DefaultProtocolInterceptor extends AtmosphereInterceptorAdapter {
         AtmosphereRequest request = response.request();
         String refid = (String)request.getAttribute(WebSocketConstants.DEFAULT_REQUEST_ID_KEY);
 
+        if (AtmosphereResource.TRANSPORT.WEBSOCKET != response.resource().transport()) {
+            return payload; 
+        }
         Map<String, String> headers = new HashMap<String, String>();
         if (refid != null) {
             response.addHeader(WebSocketConstants.DEFAULT_RESPONSE_ID_KEY, refid);
@@ -285,7 +359,7 @@ public class DefaultProtocolInterceptor extends AtmosphereInterceptorAdapter {
     }
 
     // a workaround to flush the header data upon close when no write operation occurs  
-    private class WrappedAtmosphereResponse extends AtmosphereResponse {
+    private class WrappedAtmosphereResponse extends AtmosphereResponseImpl {
         final AtmosphereResponse response;
         ServletOutputStream sout;
         WrappedAtmosphereResponse(AtmosphereResponse resp, AtmosphereRequest req) throws IOException {
