@@ -159,6 +159,7 @@
                         <Import-Package>
                             org.apache.cxf.wsn.util.*;version=${project.version},
                             !org.apache.cxf.wsn*,
+                            javax.jms*;version="[0.0,3)",
                             javax.xml.bind*;version="[0.0,3)",
                             javax.jws*;version="[0.0,3)",
                             javax.xml.ws*;version="[0.0,3)",
