@@ -46,7 +46,7 @@ public class HTTPProxyConduitTest extends HTTPConduitTest {
     private static AtomicInteger count = new AtomicInteger();
     static class CountingFilter extends HttpFiltersAdapter {
 
-        public CountingFilter(HttpRequest originalRequest) {
+        CountingFilter(HttpRequest originalRequest) {
             super(originalRequest);
         }
 
