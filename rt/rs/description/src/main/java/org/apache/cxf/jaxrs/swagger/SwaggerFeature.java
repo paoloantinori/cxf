@@ -40,6 +40,7 @@ import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSServiceFactoryBean;
 import org.apache.cxf.jaxrs.ext.MessageContext;
 import org.apache.cxf.jaxrs.provider.ServerProviderFactory;
+import org.apache.cxf.phase.Phase;
 
 public class SwaggerFeature extends AbstractSwaggerFeature {
 
@@ -53,26 +54,27 @@ public class SwaggerFeature extends AbstractSwaggerFeature {
                 setResourceClassesFromBeans(serviceBeans);
         }
         List<Object> providers = new ArrayList<Object>();
-        if (runAsFilter) {
-            providers.add(new SwaggerContainerRequestFilter(apiListingResource));
-        }
         providers.add(new ResourceListingProvider());
         providers.add(new ApiDeclarationProvider());
-        ((ServerProviderFactory)server.getEndpoint().get(
-                ServerProviderFactory.class.getName())).setUserProviders(providers);
         
-        BeanConfig beanConfig = new BeanConfig();
-        beanConfig.setResourcePackage(getResourcePackage());
-        beanConfig.setVersion(getVersion());
-        beanConfig.setBasePath(getBasePath());
-        beanConfig.setTitle(getTitle());
-        beanConfig.setDescription(getDescription());
-        beanConfig.setContact(getContact());
-        beanConfig.setLicense(getLicense());
-        beanConfig.setLicenseUrl(getLicenseUrl());
-        beanConfig.setTermsOfServiceUrl(getTermsOfServiceUrl());
-        beanConfig.setScan(isScan());
-        beanConfig.setFilterClass(getFilterClass());
+        BeanConfigWrapper beanConfigWrapper = new BeanConfigWrapper();
+        beanConfigWrapper.setResourcePackage(getResourcePackage());
+        beanConfigWrapper.setVersion(getVersion());
+        beanConfigWrapper.setBasePath(getBasePath());
+        beanConfigWrapper.setTitle(getTitle());
+        beanConfigWrapper.setDescription(getDescription());
+        beanConfigWrapper.setContact(getContact());
+        beanConfigWrapper.setLicense(getLicense());
+        beanConfigWrapper.setLicenseUrl(getLicenseUrl());
+        beanConfigWrapper.setTermsOfServiceUrl(getTermsOfServiceUrl());
+        beanConfigWrapper.setScan(isScan());
+        beanConfigWrapper.setFilterClass(getFilterClass());
+        server.getEndpoint().getInInterceptors().add(new SetScannerInterceptor(Phase.PRE_INVOKE, beanConfigWrapper));
+        if (runAsFilter) {
+            providers.add(new SwaggerContainerRequestFilter(apiListingResource, beanConfigWrapper));
+        }
+        ((ServerProviderFactory)server.getEndpoint().get(ServerProviderFactory.class.getName()))
+            .setUserProviders(providers);
     }    
 
     @Override
@@ -86,15 +88,30 @@ public class SwaggerFeature extends AbstractSwaggerFeature {
         private static final Pattern APIDOCS_RESOURCE_PATH = Pattern.compile(APIDOCS_LISTING_PATH + "(/.+)");
         
         private ApiListingResourceJSON apiListingResource;
+        private BeanConfigWrapper beanConfigWrapper;
         @Context
         private MessageContext mc;
-        SwaggerContainerRequestFilter(ApiListingResourceJSON apiListingResource) {
+        SwaggerContainerRequestFilter(ApiListingResourceJSON apiListingResource, BeanConfigWrapper beanConfigWrapper) {
             this.apiListingResource = apiListingResource;
+            this.beanConfigWrapper = beanConfigWrapper;
         }
 
         @Override
         public void filter(ContainerRequestContext requestContext) throws IOException {
             UriInfo ui = mc.getUriInfo();
+            BeanConfig beanConfig = new BeanConfig();
+            beanConfig.setResourcePackage(beanConfigWrapper.getResourcePackage());
+            beanConfig.setVersion(beanConfigWrapper.getVersion());
+            beanConfig.setBasePath(beanConfigWrapper.getBasePath());
+            beanConfig.setTitle(beanConfigWrapper.getTitle());
+            beanConfig.setDescription(beanConfigWrapper.getDescription());
+            beanConfig.setContact(beanConfigWrapper.getContact());
+            beanConfig.setLicense(beanConfigWrapper.getLicense());
+            beanConfig.setLicenseUrl(beanConfigWrapper.getLicenseUrl());
+            beanConfig.setScan(beanConfigWrapper.isScan());
+            beanConfig.setTermsOfServiceUrl(beanConfigWrapper.getTermsOfServiceUrl());
+            beanConfig.setFilterClass(beanConfigWrapper.getFilterClass());
+            mc.getServletContext().setAttribute("SCANNER", beanConfig);
             if (ui.getPath().endsWith(APIDOCS_LISTING_PATH)) {
                 Response r = 
                     apiListingResource.resourceListing(null, mc.getServletConfig(), mc.getHttpHeaders(), ui);
