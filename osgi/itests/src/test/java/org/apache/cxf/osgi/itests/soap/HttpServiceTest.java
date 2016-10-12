@@ -51,7 +51,7 @@ public class HttpServiceTest extends CXFOSGiTestSupport {
         Assert.assertEquals("Hi Chris", res);
     }
 
-    @Ignore
+    @Ignore("ENTESB-6172")
     @Test
     public void testHttpEndpointJetty() throws Exception {
         Greeter greeter = greeterHttpProxy(HttpTestActivator.PORT);

@@ -50,7 +50,7 @@ import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.logLevel;
 @ExamReactorStrategy(PerClass.class)
 public class JmsServiceTest extends CXFOSGiTestSupport {
 
-    @Ignore
+    @Ignore("ENTESB-6172")
     @Test
     public void testJmsEndpoint() throws Exception {
         Greeter greeter = greeterJms();
