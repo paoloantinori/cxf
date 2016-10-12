@@ -24,9 +24,9 @@ import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.osgi.itests.CXFOSGiTestSupport;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.PaxExam;
@@ -50,6 +50,8 @@ public class HttpServiceTest extends CXFOSGiTestSupport {
         String res = greeter.greetMe("Chris");
         Assert.assertEquals("Hi Chris", res);
     }
+
+    @Ignore
     @Test
     public void testHttpEndpointJetty() throws Exception {
         Greeter greeter = greeterHttpProxy(HttpTestActivator.PORT);
