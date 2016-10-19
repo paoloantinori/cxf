@@ -28,7 +28,6 @@ import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.osgi.itests.CXFOSGiTestSupport;
 import org.apache.cxf.transport.jms.ConnectionFactoryFeature;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.Configuration;
@@ -50,7 +49,6 @@ import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.logLevel;
 @ExamReactorStrategy(PerClass.class)
 public class JmsServiceTest extends CXFOSGiTestSupport {
 
-    @Ignore("ENTESB-6172")
     @Test
     public void testJmsEndpoint() throws Exception {
         Greeter greeter = greeterJms();
